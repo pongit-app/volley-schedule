@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>バレー日程</title>
+<meta name="theme-color" content="#f5f3f6">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="バレー日程">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="application-name" content="バレー日程">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="favicon.png">
+<link rel="manifest" href="manifest.json">
+<style>
+/* 既定はライト。ヘッダーのボタンでダークに切替（localStorageに保存） */
+:root{
+ --bg:#f5f3f6; --panel:#ffffff; --panel2:#efe9f2; --line:#e0dbe6;
+ --fg:#1d1a22; --dim:#6c6577; --accent:#c2410c;
+ --hdr:rgba(245,243,246,.94);
+ --nextbg:linear-gradient(135deg,#fdf6ef,#f3ecf6); --nextln:#e3d5e9;
+ --sat:#1668c8; --sun:#cf3b3b;
+ --hbg:rgba(26,127,55,.13); --hfg:#15803d;
+ --abg:rgba(108,101,119,.12); --afg:#5c5668;
+ --tv:#2563c4; --nt:#15803d;
+ --sh:0 1px 2px rgba(29,26,34,.06);
+ --pre:#7c3aed; --prebg:#faf7ff; --nbg:rgba(124,58,237,.12); --nfg:#6d28d9;
+ --goc:#d97706; --gobg:#fffaf0; --wc:#15803d; --lc:#c2410c;
+}
+:root[data-theme="dark"]{
+ --bg:#0e1116; --panel:#161b22; --panel2:#1c2230; --line:#2a3240;
+ --fg:#e6edf3; --dim:#8b98a8; --accent:#ff7a1a;
+ --hdr:rgba(14,17,22,.94);
+ --nextbg:linear-gradient(135deg,#1d2634,#161b22); --nextln:#33405a;
+ --sat:#4aa3ff; --sun:#ff6b6b;
+ --hbg:rgba(46,160,67,.18); --hfg:#4ac26b;
+ --abg:rgba(125,135,148,.16); --afg:#9aa5b4;
+ --tv:#7fb3ff; --nt:#4ac26b;
+ --sh:none;
+ --pre:#b794f6; --prebg:#1a1826; --nbg:rgba(183,148,246,.16); --nfg:#b794f6;
+ --goc:#fbbf24; --gobg:#241d10; --wc:#4ac26b; --lc:#ff8a5c;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);
+ font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;
+ -webkit-text-size-adjust:100%}
+header{position:sticky;top:0;z-index:10;background:var(--hdr);
+ backdrop-filter:blur(8px);border-bottom:1px solid var(--line);
+ padding-top:env(safe-area-inset-top)}
+.wrap{max-width:760px;margin:0 auto;
+ padding:0 calc(12px + env(safe-area-inset-left)) 0 calc(12px + env(safe-area-inset-right))}
+.hrow{display:flex;align-items:center;gap:8px}
+h1{font-size:17px;margin:0;padding:12px 0 8px;letter-spacing:.02em;flex:1;min-width:0}
+h1 span{color:var(--dim);font-size:12px;font-weight:400;margin-left:6px;white-space:nowrap}
+#theme{flex:0 0 auto;width:34px;height:34px;border-radius:50%;border:1px solid var(--line);
+ background:var(--panel);color:var(--fg);font-size:15px;line-height:1;cursor:pointer;
+ display:flex;align-items:center;justify-content:center;box-shadow:var(--sh)}
+@media (max-width:430px){
+ h1{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ h1 span{font-size:10px;margin-left:5px}
+}
+.tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:10px;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex:0 0 auto;padding:7px 13px;border-radius:999px;border:1px solid var(--line);
+ background:var(--panel);color:var(--dim);font-size:13px;cursor:pointer;white-space:nowrap;
+ box-shadow:var(--sh)}
+.tab.on{background:var(--tc,#333);border-color:var(--tc,#333);color:#fff;font-weight:600}
+.filters{display:flex;gap:6px;padding:0 0 10px;flex-wrap:wrap;align-items:center}
+.chip{padding:5px 11px;border-radius:6px;border:1px solid var(--line);background:var(--panel);
+ color:var(--dim);font-size:12px;cursor:pointer;box-shadow:var(--sh)}
+.chip.on{background:var(--panel2);color:var(--fg);border-color:var(--accent)}
+.count{margin-left:auto;font-size:12px;color:var(--dim)}
+main{max-width:760px;margin:0 auto;
+ padding:14px calc(12px + env(safe-area-inset-right)) calc(60px + env(safe-area-inset-bottom)) calc(12px + env(safe-area-inset-left))}
+.next{background:var(--nextbg);border:1px solid var(--nextln);
+ border-radius:12px;padding:13px 14px;margin-bottom:18px;box-shadow:var(--sh)}
+.next .lb{font-size:11px;color:var(--accent);letter-spacing:.1em;font-weight:700}
+.next .mn{font-size:16px;font-weight:700;margin-top:5px}
+.next .sb{font-size:12px;color:var(--dim);margin-top:4px}
+.mon{font-size:12px;color:var(--dim);font-weight:700;letter-spacing:.08em;
+ margin:20px 0 8px;padding-bottom:5px;border-bottom:1px solid var(--line)}
+.mon:first-child{margin-top:0}
+.g{display:flex;gap:11px;align-items:center;padding:9px 10px;border-radius:9px;
+ background:var(--panel);border:1px solid transparent;margin-bottom:5px;box-shadow:var(--sh)}
+.g.past{opacity:.82}
+.g.soon{border-color:var(--accent);background:var(--panel2)}
+.dt{flex:0 0 50px;text-align:center;line-height:1.15}
+.dt b{display:block;font-size:17px;font-weight:700}
+.dt i{font-style:normal;font-size:10px;color:var(--dim)}
+.dt.sat b{color:var(--sat)} .dt.sun b{color:var(--sun)}
+.mid{flex:1;min-width:0}
+.mid .op{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mid .vn{font-size:11px;color:var(--dim);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rt{flex:0 0 auto;text-align:right}
+.ha{display:inline-block;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px}
+.ha.H{background:var(--hbg);color:var(--hfg)}
+.ha.A{background:var(--abg);color:var(--afg)}
+.tm{font-size:12px;color:var(--dim);margin-top:3px}
+.sec{font-size:10px;color:var(--dim);font-weight:600;margin-bottom:2px}
+.ss{font-size:10.5px;color:var(--dim);margin-top:2px;letter-spacing:.01em}
+.jp .cat{font-size:10px;color:var(--accent);font-weight:700;margin-bottom:2px}
+.pre{font-size:10px;font-weight:700;margin-bottom:2px;color:var(--pre)}
+.g.pregame{background:var(--prebg)}
+.ha.N{background:var(--nbg);color:var(--nfg)}
+.sc{font-size:13px;font-weight:700;margin-top:3px;white-space:nowrap}
+.sc.W{color:var(--wc)} .sc.L{color:var(--lc)} .sc.D{color:var(--dim)}
+.sc small{font-weight:600;font-size:10px;opacity:.9;margin-left:1px}
+.rec{display:flex;gap:8px;flex-wrap:wrap;align-items:baseline;
+ font-size:12px;color:var(--dim);margin:-8px 0 16px;padding:9px 12px;
+ background:var(--panel);border:1px solid var(--line);border-radius:9px;box-shadow:var(--sh)}
+.rec b{font-size:14px;color:var(--fg)}
+.rec .lb{font-size:10px;font-weight:700;letter-spacing:.06em;color:var(--accent)}
+.go{flex:0 0 auto;width:34px;height:34px;margin-left:2px;border:0;background:none;
+ color:var(--dim);font-size:19px;line-height:1;cursor:pointer;border-radius:50%;
+ display:flex;align-items:center;justify-content:center;padding:0}
+.go.on{color:var(--goc)}
+.g.going{border-color:var(--goc);background:var(--gobg)}
+.g.going .dt b{color:var(--goc)}
+.jp .tv{font-size:11px;color:var(--tv);margin-top:2px}
+.jp .nt{font-size:11px;color:var(--nt);margin-top:2px}
+.note{font-size:11px;color:var(--dim);line-height:1.7;margin-top:26px;
+ padding-top:14px;border-top:1px solid var(--line)}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+<div class="hrow"><h1>バレー観戦カレンダー<span>2026-27 東京GB / 男子・女子日本代表</span></h1><button id="theme" type="button" aria-label="表示テーマを切り替え">🌙</button></div>
+<div class="tabs" id="tabs"></div>
+<div class="filters" id="filters">
+  <span class="chip on" data-f="all">全試合</span>
+  <span class="chip" data-f="HOME" id="chipH">ホーム</span>
+  <span class="chip" data-f="AWAY" id="chipA">アウェー</span>
+  <span class="chip" data-f="future">これから</span>
+  <span class="chip" data-f="going">★行く</span>
+  <span class="count" id="count"></span>
+</div>
+</div></header>
+<main id="main"></main>
+<script>
+const DATA={"東京グレートベアーズ": {"short": "東京GB", "color": "#1f1f1f", "type": "club", "games": [{"d": "2026-10-17", "w": "土", "opp": "北海道YS", "ha": "HOME", "venue": "有明コロシアム", "t": "14:05", "id": "37992", "cat": "第3節 GAME1", "sc": "", "r": "", "ss": "", "tv": "", "note": ""}, {"d": "2026-10-18", "w": "日", "opp": "北海道YS", "ha": "HOME", "venue": "有明コロシアム", "t": "14:05", "id": "37993", "cat": "第3節 GAME2", "sc": "", "r": "", "ss": "", "tv": "", "note": ""}, {"d": "2026-10-24", "w": "土", "opp": "WD名古屋", "ha": "AWAY", "venue": "エントリオ", "t": "16:35", "id": "37974", "cat": "第1節 GAME1", "sc": "", "r": "", "ss": "", "tv": "", "note": ""}, {"d": "2026-10-25", "w": "日", "opp": "WD名古屋", "ha": "AWAY", "venue": "エントリオ", "t": "15:35", "id": "37975", "cat": "第1節 GAME2", "sc": "", "r": "", "ss": "", "tv": "", "note": ""}, {"d": "2026-10-31", "w": "土", "opp": "広島TH", "ha": "AWAY", "venue": "広島グリーンアリーナ", "t": "14:05", "id": "37988", "cat": "第2節 GAME1", "sc": "", "r": "", "ss": "", "tv": "", "note": ""}, {"d": "2026-11-01", "w": "日", "opp": "広島TH", "ha": "AWAY", "venue": "広島グリーンアリーナ", "t": "13:05", "id": "37989", "cat": "第2節 GAME2", "sc": "", "r": "", "ss": "", "tv": "", "note": ""}, {"d": "2026-11-14", "w": "土", "opp": "松本TD", "ha": "HOME", "venue": "国立代々木競技場第二体育館", "t": "14:05", "id": "38006", "cat": "第4節 GAME1", "sc": "", "r": "", "ss": "", "tv": "", "note": ""}, {"d": "2026-11-15", "w": "日", "opp": "松本TD", "ha": "HOME", "venue": "国立代々木競技場第二体育館", "t": "14:05", "id": "38007", "cat": "第4節 GAME2", "sc": "", "r": "", "ss": "", "tv": "", "note": ""}, {"d": "2026-11-21", "w": "土", "opp": "STINGS愛知", "ha": "AWAY", "venue": "CNAアリーナ★あきた", "t": "12:05", "id": "38020", "cat": "第5節 GAME1", "sc": "", "r": "", "ss": "", "tv": "", "note": ""}, {"d": "2026-11-22", "w": "日", "opp": "STINGS愛知", "ha": "AWAY", "venue": "CNAアリーナ★あきた", "t": "12:05", "id": "38021", "cat": "第5節 GAME2", "sc": "", "r": "", "ss": "", "tv": "", "note": ""}, {"d": "2026-11-26", "w": "木", "opp": "日鉄堺BZ", "ha": "AWAY", "venue": "和歌山ビッグホエール", "t": "18:35", "id": "38028", "cat": "第6節 GAME1", "sc": "", "r": "", "ss": "", "tv": "", "note": ""}, {"d": "2026-11-27", "w": "金", "opp": "日鉄堺BZ", "ha": "AWAY", "venue": "和歌山ビッグホエール", "t": "18:35", "id": "38029", "cat": "第6節 GAME2", "sc": "", "r": "", "ss": "", "tv": "", "note": ""}, {"d": "2026-12-05", "w": "土", "opp": "ヴォレアス", "ha": "HOME", "venue": "国立代々木競技場第一体育館", "t": "14:05", "id": "38042", "cat": "第7節 GAME1", "sc": "", "r": "", "ss": "", "tv": "", "note": ""}, {"d": "2026-12-06", "w": "日", "opp": "ヴォレアス", "ha": "HOME", "venue": "国立代々木競技場第一体育館", "t": "14:05", "id": "38043", "cat": "第7節 GAME2", "sc": "", "r": "", "ss": "", "tv": "", "note": ""}, {"d": "2026-12-19", "w": "土", "opp": "サントリー", "ha": "HOME", "venue": "国立代々木競技場第二体育館", "t": "14:05", "id": "38054", "cat": "第8節 GAME1", "sc": "", "r": "", "ss": "", "tv": "", "note": ""}, {"d": "2026-12-20", "w": "日", "opp": "サントリー", "ha": "HOME", "venue": "国立代々木競技場第二体育館", "t": "14:05", "id": "38055", "cat": "第8節 GAME2", "sc": "", "r": "", "ss": "", "tv": "", "note": ""}, {"d": "2026-12-26", "w": "土", "opp": "大阪Ｂ", "ha": "HOME", "venue": "有明コロシアム", "t": "14:05", "id": "38064", "cat": "第9節 GAME1", "sc": "", "r": "", "ss": "", "tv": "", "note": ""}, {"d": "2026-12-27", "w": "日", "opp": "大阪Ｂ", "ha": "HOME", "venue": "有明コロシアム", "t": "14:05", "id": "38065", "cat": "第9節 GAME2", "sc": "", "r": "", "ss": "", "tv": "", "note": ""}, {"d": "2027-01-02", "w": "土", "opp": "F鹿児島", "ha": "AWAY", "venue": "Fアリーナいちき串木野", "t": "15:05", "id": "38082", "cat": "第10節 GAME1", "sc": "", "r": "", "ss": "", "tv": "", "note": ""}, {"d": "2027-01-03", "w": "日", "opp": "F鹿児島", "ha": "AWAY", "venue": "Fアリーナいちき串木野", "t": "13:05", "id": "38083", "cat": "第10節 GAME2", "sc": "", "r": "", "ss": "", "tv": "", "note": ""}, {"d": "2027-01-16", "w": "土", "opp": "広島TH", "ha": "HOME", "venue": "有明コロシアム", "t": "14:05", "id": "38092", "cat": "第11節 GAME1", "sc": "", "r": "", "ss": "", "tv": "", "note": ""}, {"d": "2027-01-17", "w": "日", "opp": "広島TH", "ha": "HOME", "venue": "有明コロシアム", "t": "14:05", "id": "38093", "cat": "第11節 GAME2", "sc": "", "r": "", "ss": "", "tv": "", "note": ""}, {"d": "2027-01-23", "w": "土", "opp": "日鉄堺BZ", "ha": "HOME", "venue": "国立代々木競技場第二体育館", "t": "14:05", "id": "38102", "cat": "第12節 GAME1", "sc": "", "r": "", "ss": "", "tv": "", "note": ""}, {"d": "2027-01-24", "w": "日", "opp": "日鉄堺BZ", "ha": "HOME", "venue": "国立代々木競技場第二体育館", "t": "14:05", "id": "38103", "cat": "第12節 GAME2", "sc": "", "r": "", "ss": "", "tv": "", "note": ""}, {"d": "2027-02-06", "w": "土", "opp": "STINGS愛知", "ha": "HOME", "venue": "TOYOTA ARENA TOKYO", "t": "16:05", "id": "38112", "cat": "第13節 GAME1", "sc": "", "r": "", "ss": "", "tv": "", "note": ""}, {"d": "2027-02-07", "w": "日", "opp": "STINGS愛知", "ha": "HOME", "venue": "TOYOTA ARENA TOKYO", "t": "12:05", "id": "38113", "cat": "第13節 GAME2", "sc": "", "r": "", "ss": "", "tv": "", "note": ""}, {"d": "2027-02-13", "w": "土", "opp": "北海道YS", "ha": "AWAY", "venue": "北ガスアリーナ札幌46", "t": "14:05", "id": "38130", "cat": "第14節 GAME1", "sc": "", "r": "", "ss": "", "tv": "", "note": ""}, {"d": "2027-02-14", "w": "日", "opp": "北海道YS", "ha": "AWAY", "venue": "北ガスアリーナ札幌46", "t": "13:05", "id": "38131", "cat": "第14節 GAME2", "sc": "", "r": "", "ss": "", "tv": "", "note": ""}, {"d": "2027-02-19", "w": "金", "opp": "サントリー", "ha": "AWAY", "venue": "沖縄サントリーアリーナ", "t": "19:05", "id": "38136", "cat": "第15節 GAME1", "sc": "", "r": "", "ss": "", "tv": "", "note": ""}, {"d": "2027-02-20", "w": "土", "opp": "サントリー", "ha": "AWAY", "venue": "沖縄サントリーアリーナ", "t": "15:05", "id": "38137", "cat": "第15節 GAME2", "sc": "", "r": "", "ss": "", "tv": "", "note": ""}, {"d": "2027-02-27", "w": "土", "opp": "東レ静岡", "ha": "HOME", "venue": "有明コロシアム", "t": "14:05", "id": "38150", "cat": "第16節 GAME1", "sc": "", "r": "", "ss": "", "tv": "", "note": ""}, {"d": "2027-02-28", "w": "日", "opp": "東レ静岡", "ha": "HOME", "venue": "有明コロシアム", "t": "14:05", "id": "38151", "cat": "第16節 GAME2", "sc": "", "r": "", "ss": "", "tv": "", "note": ""}, {"d": "2027-03-13", "w": "土", "opp": "大阪Ｂ", "ha": "AWAY", "venue": "GLION ARENA KOBE", "t": "15:05", "id": "38164", "cat": "第17節 GAME1", "sc": "", "r": "", "ss": "", "tv": "", "note": ""}, {"d": "2027-03-14", "w": "日", "opp": "大阪Ｂ", "ha": "AWAY", "venue": "GLION ARENA KOBE", "t": "18:05", "id": "38165", "cat": "第17節 GAME2", "sc": "", "r": "", "ss": "", "tv": "", "note": ""}, {"d": "2027-03-19", "w": "金", "opp": "F鹿児島", "ha": "HOME", "venue": "東京体育館", "t": "19:05", "id": "38172", "cat": "第18節 GAME1", "sc": "", "r": "", "ss": "", "tv": "", "note": ""}, {"d": "2027-03-20", "w": "土", "opp": "F鹿児島", "ha": "HOME", "venue": "東京体育館", "t": "15:05", "id": "38173", "cat": "第18節 GAME2", "sc": "", "r": "", "ss": "", "tv": "", "note": ""}, {"d": "2027-03-27", "w": "土", "opp": "WD名古屋", "ha": "HOME", "venue": "有明コロシアム", "t": "14:05", "id": "38186", "cat": "第19節 GAME1", "sc": "", "r": "", "ss": "", "tv": "", "note": ""}, {"d": "2027-03-28", "w": "日", "opp": "WD名古屋", "ha": "HOME", "venue": "有明コロシアム", "t": "14:05", "id": "38187", "cat": "第19節 GAME2", "sc": "", "r": "", "ss": "", "tv": "", "note": ""}, {"d": "2027-04-03", "w": "土", "opp": "松本TD", "ha": "AWAY", "venue": "エア・ウォーターアリーナ松本", "t": "14:05", "id": "38198", "cat": "第20節 GAME1", "sc": "", "r": "", "ss": "", "tv": "", "note": ""}, {"d": "2027-04-04", "w": "日", "opp": "松本TD", "ha": "AWAY", "venue": "エア・ウォーターアリーナ松本", "t": "13:05", "id": "38199", "cat": "第20節 GAME2", "sc": "", "r": "", "ss": "", "tv": "", "note": ""}, {"d": "2027-04-10", "w": "土", "opp": "東レ静岡", "ha": "AWAY", "venue": "調整中", "t": "", "id": "38210", "cat": "第21節 GAME1", "sc": "", "r": "", "ss": "", "tv": "", "note": ""}, {"d": "2027-04-11", "w": "日", "opp": "東レ静岡", "ha": "AWAY", "venue": "調整中", "t": "", "id": "38211", "cat": "第21節 GAME2", "sc": "", "r": "", "ss": "", "tv": "", "note": ""}, {"d": "2027-04-17", "w": "土", "opp": "ヴォレアス", "ha": "AWAY", "venue": "リクルートスタッフィング リック&スー旭川体育館", "t": "13:05", "id": "38222", "cat": "第22節 GAME1", "sc": "", "r": "", "ss": "", "tv": "", "note": ""}, {"d": "2027-04-18", "w": "日", "opp": "ヴォレアス", "ha": "AWAY", "venue": "リクルートスタッフィング リック&スー旭川体育館", "t": "13:05", "id": "38223", "cat": "第22節 GAME2", "sc": "", "r": "", "ss": "", "tv": "", "note": ""}]}, "男子日本代表": {"short": "男子代表", "color": "#0b3d91", "type": "nt", "games": [{"d": "2026-09-04", "w": "金", "opp": "オマーン", "ha": "HOME", "venue": "北九州市立総合体育館（福岡）", "t": "19:30", "id": "", "cat": "アジア選手権 プールA", "sc": "3-1", "r": "W", "ss": "25-18・25-13・20-25・25-9", "tv": "フジテレビ系・FOD", "note": ""}, {"d": "2026-09-06", "w": "日", "opp": "バーレーン", "ha": "HOME", "venue": "北九州市立総合体育館（福岡）", "t": "19:30", "id": "", "cat": "アジア選手権 プールA", "sc": "3-0", "r": "W", "ss": "25-15・25-15・25-23", "tv": "フジテレビ系・FOD", "note": ""}, {"d": "2026-09-08", "w": "火", "opp": "オーストラリア", "ha": "HOME", "venue": "北九州市立総合体育館（福岡）", "t": "19:30", "id": "", "cat": "アジア選手権 プールA", "sc": "3-0", "r": "W", "ss": "25-20・25-13・25-21", "tv": "フジテレビ系・FOD", "note": ""}, {"d": "2026-09-11", "w": "金", "opp": "インド", "ha": "HOME", "venue": "北九州市立総合体育館（福岡）", "t": "19:30", "id": "", "cat": "アジア選手権 準々決勝", "sc": "3-0", "r": "W", "ss": "25-17・25-15・25-19", "tv": "フジテレビ系・FOD", "note": ""}, {"d": "2026-09-12", "w": "土", "opp": "韓国", "ha": "HOME", "venue": "北九州市立総合体育館（福岡）", "t": "19:30", "id": "", "cat": "アジア選手権 準決勝", "sc": "3-0", "r": "W", "ss": "25-13・25-11・25-14", "tv": "フジテレビ系・FOD", "note": ""}, {"d": "2026-09-13", "w": "日", "opp": "イラン", "ha": "HOME", "venue": "北九州市立総合体育館（福岡）", "t": "19:30", "id": "", "cat": "アジア選手権 決勝", "sc": "3-0", "r": "W", "ss": "25-21・26-24・25-23", "tv": "フジテレビ系・FOD", "note": "2大会連続11度目の優勝・ロス五輪出場決定"}, {"d": "2026-09-27", "w": "日", "opp": "ウズベキスタン", "ha": "HOME", "venue": "岡崎中央総合公園総合体育館（愛知）", "t": "19:20", "id": "", "cat": "アジア大会 予選R", "sc": "", "r": "", "ss": "", "tv": "TBS系・U-NEXT", "note": ""}, {"d": "2026-09-28", "w": "月", "opp": "カザフスタン", "ha": "HOME", "venue": "岡崎中央総合公園総合体育館（愛知）", "t": "19:20", "id": "", "cat": "アジア大会 予選R", "sc": "", "r": "", "ss": "", "tv": "TBS系・U-NEXT", "note": ""}, {"d": "2026-09-29", "w": "火", "opp": "パキスタン", "ha": "HOME", "venue": "岡崎中央総合公園総合体育館（愛知）", "t": "19:20", "id": "", "cat": "アジア大会 予選R", "sc": "", "r": "", "ss": "", "tv": "TBS系・U-NEXT", "note": ""}, {"d": "2026-10-03", "w": "土", "opp": "（勝ち上がり次第）", "ha": "HOME", "venue": "岡崎中央総合公園総合体育館（愛知）", "t": "未定", "id": "", "cat": "アジア大会 決勝トーナメント", "sc": "", "r": "", "ss": "", "tv": "TBS系・U-NEXT", "note": "決勝トーナメントは予選R後〜10/3決勝"}]}, "女子日本代表": {"short": "女子代表", "color": "#c8102e", "type": "nt", "games": [{"d": "2026-08-21", "w": "金", "opp": "香港", "ha": "AWAY", "venue": "天津（中国）", "t": "19:30", "id": "", "cat": "アジア選手権 プールC", "sc": "3-0", "r": "W", "ss": "25-9・25-15・25-12", "tv": "FOD", "note": ""}, {"d": "2026-08-23", "w": "日", "opp": "韓国", "ha": "AWAY", "venue": "天津（中国）", "t": "19:30", "id": "", "cat": "アジア選手権 プールC", "sc": "3-0", "r": "W", "ss": "33-31・25-19・25-20", "tv": "FOD", "note": ""}, {"d": "2026-08-25", "w": "火", "opp": "ベトナム", "ha": "AWAY", "venue": "天津（中国）", "t": "19:30", "id": "", "cat": "アジア選手権 プールC", "sc": "3-0", "r": "W", "ss": "25-23・25-17・25-21", "tv": "FOD", "note": ""}, {"d": "2026-08-27", "w": "木", "opp": "チャイニーズ・タイペイ", "ha": "AWAY", "venue": "天津（中国）", "t": "19:30", "id": "", "cat": "アジア選手権 準々決勝", "sc": "3-0", "r": "W", "ss": "25-14・25-21・25-13", "tv": "FOD", "note": ""}, {"d": "2026-08-29", "w": "土", "opp": "タイ", "ha": "AWAY", "venue": "天津（中国）", "t": "18:15", "id": "", "cat": "アジア選手権 準決勝", "sc": "1-3", "r": "L", "ss": "21-25・20-25・25-20・20-25", "tv": "FOD", "note": ""}, {"d": "2026-08-30", "w": "日", "opp": "イラン", "ha": "AWAY", "venue": "天津（中国）", "t": "16:15", "id": "", "cat": "アジア選手権 3位決定戦", "sc": "3-0", "r": "W", "ss": "25-21・25-16・26-24", "tv": "FOD", "note": "3位"}, {"d": "2026-09-16", "w": "水", "opp": "ネパール", "ha": "HOME", "venue": "パークアリーナ小牧（愛知）", "t": "19:20", "id": "", "cat": "アジア大会 予選R", "sc": "3-0", "r": "W", "ss": "25-8・25-12・25-11", "tv": "TBS系・U-NEXT", "note": ""}, {"d": "2026-09-18", "w": "金", "opp": "インドネシア", "ha": "HOME", "venue": "パークアリーナ小牧（愛知）", "t": "19:20", "id": "", "cat": "アジア大会 予選R", "sc": "3-1", "r": "W", "ss": "25-19・25-13・23-25・25-23", "tv": "TBS系・U-NEXT", "note": ""}, {"d": "2026-09-20", "w": "日", "opp": "チャイニーズ・タイペイ", "ha": "HOME", "venue": "パークアリーナ小牧（愛知）", "t": "19:20", "id": "", "cat": "アジア大会 準々決勝", "sc": "", "r": "", "ss": "", "tv": "TBS系・U-NEXT", "note": ""}, {"d": "2026-09-21", "w": "月", "opp": "（勝ち上がり次第）", "ha": "HOME", "venue": "パークアリーナ小牧（愛知）", "t": "未定", "id": "", "cat": "アジア大会 準決勝", "sc": "", "r": "", "ss": "", "tv": "TBS系・U-NEXT", "note": ""}, {"d": "2026-09-22", "w": "火", "opp": "（勝敗により決定）", "ha": "HOME", "venue": "パークアリーナ小牧（愛知）", "t": "未定", "id": "", "cat": "アジア大会 決勝・3位決定戦", "sc": "", "r": "", "ss": "", "tv": "TBS系・U-NEXT", "note": "1978年以来48年ぶりの金メダルを目指す"}]}};
+(function(){
+  const root=document.documentElement, btn=document.getElementById('theme'),
+        meta=document.querySelector('meta[name="theme-color"]');
+  let saved=null; try{saved=localStorage.getItem('theme');}catch(e){}
+  function apply(t){
+    if(t==='dark') root.setAttribute('data-theme','dark'); else root.removeAttribute('data-theme');
+    btn.textContent = t==='dark' ? '☀️' : '🌙';
+    if(meta) meta.setAttribute('content', t==='dark' ? '#0e1116' : '#f5f3f6');
+  }
+  apply(saved==='dark'?'dark':'light');
+  btn.onclick=function(){
+    const next = root.getAttribute('data-theme')==='dark' ? 'light' : 'dark';
+    apply(next); try{localStorage.setItem('theme',next);}catch(e){}
+  };
+})();
+const GOKEY='going';
+let GOING;
+try{ const raw=localStorage.getItem(GOKEY); GOING=new Set(raw?JSON.parse(raw):null); }catch(e){ GOING=new Set(); }
+function saveGoing(){ try{ localStorage.setItem(GOKEY, JSON.stringify([...GOING])); }catch(e){} }
+function gkey(g){ return cur+'|'+g.d+'|'+g.opp; }
+
+const TODAY = new Date(); TODAY.setHours(0,0,0,0);
+const keys = Object.keys(DATA);
+let cur = keys[0], filt = "all";
+const tabsEl = document.getElementById('tabs');
+const isNT = () => DATA[cur].type==='nt';
+
+function mkTabs(){
+  tabsEl.innerHTML = '';
+  keys.forEach(k=>{
+    const b=document.createElement('span');
+    b.className='tab'+(k===cur?' on':'');
+    b.textContent = (DATA[k].type==='nt'?'🇯🇵 ':'') + DATA[k].short;
+    b.style.setProperty('--tc', DATA[k].color);
+    b.onclick=()=>{cur=k;mkTabs();render();};
+    tabsEl.appendChild(b);
+  });
+}
+document.querySelectorAll('#filters .chip').forEach(c=>{
+  c.onclick=()=>{
+    document.querySelectorAll('#filters .chip').forEach(x=>x.classList.remove('on'));
+    c.classList.add('on'); filt=c.dataset.f; render();
+  };
+});
+const dObj = s => { const [y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d); };
+const monLabel = s => { const [y,m]=s.split('-'); return y+"年"+Number(m)+"月"; };
+const esc = s => (s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const haLabel = (ha,nt) => nt ? (ha==='HOME'?'国内':'海外') : (ha==='HOME'?'H':'A');
+
+function row(g){
+  const nt=isNT();
+  const dt = dObj(g.d), past = dt < TODAY;
+  const diff = Math.round((dt-TODAY)/86400000);
+  const wc = g.w==='土'?' sat':(g.w==='日'?' sun':'');
+  const going = GOING.has(gkey(g));
+  const cls = 'g'+(past?' past':'')+(!past&&diff<=7?' soon':'')+(nt?' jp':'')+(going?' going':'');
+  const [,mm,dd] = g.d.split('-');
+  return `<div class="${cls}">
+    <div class="dt${wc}"><b>${Number(mm)}/${Number(dd)}</b><i>${g.w}</i></div>
+    <div class="mid">
+      ${g.cat?(nt?`<div class="cat">${esc(g.cat)}</div>`:`<div class="sec">${esc(g.cat)}</div>`):''}
+      <div class="op">vs ${esc(g.opp)}</div>
+      <div class="vn">${esc(g.venue)}</div>
+      ${g.ss?`<div class="ss">${esc(g.ss)}</div>`:''}
+      ${nt&&g.tv&&!g.sc?`<div class="tv">📺 ${esc(g.tv)}</div>`:''}
+      ${g.note?`<div class="nt">${esc(g.note)}</div>`:''}
+    </div>
+    <div class="rt">
+      <span class="ha ${g.ha==='HOME'?'H':'A'}">${haLabel(g.ha,nt)}</span>
+      ${g.sc
+        ? `<div class="sc ${g.r}">${g.r==='W'?'○':'●'} ${esc(g.sc)}</div>`
+        : `<div class="tm">${esc(g.t)&&g.t!=='未定'?esc(g.t):'時刻未定'}</div>`}
+    </div>
+    <button class="go${going?' on':''}" type="button" data-k="${esc(gkey(g))}"
+      aria-pressed="${going}" aria-label="行く試合にする">${going?'★':'☆'}</button>
+    </div>`;
+}
+
+function render(){
+  const nt=isNT(), club=DATA[cur];
+  document.getElementById('chipH').textContent = nt?'国内':'ホーム';
+  document.getElementById('chipA').textContent = nt?'海外':'アウェー';
+  let games = club.games.slice();
+  if(filt==='HOME'||filt==='AWAY') games = games.filter(g=>g.ha===filt);
+  if(filt==='future') games = games.filter(g=>dObj(g.d)>=TODAY);
+  if(filt==='going') games = games.filter(g=>GOING.has(gkey(g)));
+  document.getElementById('count').textContent = games.length+"試合";
+
+  const upcoming = club.games.filter(g=>dObj(g.d)>=TODAY && !g.sc)[0];
+  let html = '';
+  if(upcoming){
+    const days = Math.round((dObj(upcoming.d)-TODAY)/86400000);
+    const when = days===0?'今日':days===1?'明日':`あと${days}日`;
+    const who = nt ? cur : club.short;
+    const tm = upcoming.t&&upcoming.t!=='未定'?upcoming.t:'時刻未定';
+    html += `<div class="next"><div class="lb">NEXT GAME ・ ${when}</div>
+      <div class="mn">${upcoming.d.replace(/-/g,'/')}（${upcoming.w}） ${esc(who)} vs ${esc(upcoming.opp)}</div>
+      <div class="sb">${nt?esc(upcoming.cat)+' ・ ':(upcoming.ha==='HOME'?'ホーム ・ ':'アウェー ・ ')}${esc(upcoming.venue)} ・ ${esc(tm)}</div></div>`;
+  }
+  const done = club.games.filter(g=>g.sc);
+  if(done.length){
+    const w=done.filter(g=>g.r==='W').length, l=done.length-w;
+    html += `<div class="rec"><span class="lb">${nt?'2026年 代表戦':'リーグ戦'}</span> <b>${w}勝${l}敗</b></div>`;
+  }
+  let lastM='';
+  games.forEach(g=>{
+    const m=g.d.slice(0,7);
+    if(m!==lastM){ html += `<div class="mon">${monLabel(m)}</div>`; lastM=m; }
+    html += row(g);
+  });
+  html += `<div class="note">
+    <b>視聴メモ</b><br>
+    ・SVリーグ（東京GB）→ <b>J SPORTSオンデマンド</b>で男女全試合ライブ配信（2026-27〜）<br>
+    ・アジア競技大会（愛知・名古屋）→ <b>TBS系</b>が国内放送、U-NEXTでもライブ配信<br><br>
+    各試合の右端の☆を押すと「行く試合」として印が付き、この端末に記憶されます（絞り込みの「★行く」で一覧表示）。<br>
+    代表タブの「国内／海外」は開催地です。スコアはセットカウント（下の小さい数字は各セットの得点）。<br>
+    アジア大会の決勝トーナメントは組み合わせ・時刻が決まりしだい反映します。2027年の代表日程（ネーションズリーグ等）は発表後に追加予定。<br>
+    データ更新日：2026年9月19日 ／ 出典：SV.LEAGUE公式・スポーツナビ・JVA公式</div>`;
+  document.getElementById('main').innerHTML = html;
+  window.scrollTo(0,0);
+}
+document.getElementById('main').addEventListener('click', function(e){
+  const b = e.target.closest('.go'); if(!b) return;
+  const k = b.dataset.k;
+  if(GOING.has(k)) GOING.delete(k); else GOING.add(k);
+  saveGoing(); render();
+});
+if('serviceWorker' in navigator && location.protocol==='https:'){
+  window.addEventListener('load',()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); });
+}
+mkTabs(); render();
+</script>
+</body>
+</html>
