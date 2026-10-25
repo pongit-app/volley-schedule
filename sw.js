@@ -1,6 +1,6 @@
 // オフラインでも最後に見た日程を開けるようにするためのキャッシュ。
 // ページ本体はネット優先（更新をすぐ反映）、アイコン等はキャッシュ優先。
-const CACHE = 'volley-schedule-v2';
+const CACHE = 'volley-schedule-v3';
 const CORE = ['./', 'index.html', 'manifest.json', 'icon-192.png', 'icon-512.png',
               'icon-maskable-192.png', 'icon-maskable-512.png', 'apple-touch-icon.png', 'favicon.png'];
 self.addEventListener('install', e => {

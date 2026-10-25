@@ -1,0 +1,16 @@
+{
+  "sv": {
+    "tab": "東京グレートベアーズ",
+    "team": "東京GB",
+    "tid": "495",
+    "season": 2026,
+    "base": "https://www.svleague.jp/match/sv/men/"
+  },
+  "nt": {
+    "base": "https://sports.yahoo.co.jp/volley/japan/competitions/{cid}/schedule",
+    "tabs": {
+      "男子日本代表": ["5001", "6001"],
+      "女子日本代表": ["5003", "6003"]
+    }
+  }
+}
